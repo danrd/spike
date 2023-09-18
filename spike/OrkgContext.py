@@ -37,10 +37,10 @@ class OrkgContext:
 
         # 1. Try loading the context entries from cache
 
-        if not fresh and path.isfile(cache_path):
-            with open(cache_path, 'rb') as file:
-                self.context = pkl.load(file)
-                return
+        # if not fresh and path.isfile(cache_path):
+        #     with open(cache_path, 'rb') as file:
+        #         self.context = pkl.load(file)
+        #         return
 
         # 2. Get class context data from the knowledge graph
 
@@ -66,8 +66,8 @@ class OrkgContext:
 
         self.context = context
 
-        with open(cache_path, 'wb') as file:
-            pkl.dump(context, file)
+        # with open(cache_path, 'wb') as file:
+        #     pkl.dump(context, file)
 
     def cut(self, phrase: str, matches: callable = lambda entry, phrase: entry.label.lower() in phrase.lower()):
         examples = rank(phrase, self.sciqa.train.entries, top_n = 3, get_utterance = lambda entry: entry.utterance)

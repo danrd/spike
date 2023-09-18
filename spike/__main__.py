@@ -5,6 +5,7 @@ from openai import ChatCompletion as cc
 from .OrkgContext import OrkgContext
 from .similarity import compare as compare_strings, rank
 from .SciQA import SciQA
+from .endpoint_evaluator import ORKGWholeQueryEvaluationMetric
 
 
 NEW_LINE = '\n'
@@ -15,10 +16,10 @@ def main():
     pass
 
 
-@main.command()
-@argument('question', type = str)
-@option('-d', '--dry-run', is_flag = True, help = 'Print generated context and exit')
-@option('-f', '--fresh', is_flag = True, help = 'Don\'t use cached context entries, generate them from scratch')
+# @main.command()
+# @argument('question', type = str)
+# @option('-d', '--dry-run', is_flag = True, help = 'Print generated context and exit')
+# @option('-f', '--fresh', is_flag = True, help = 'Don\'t use cached context entries, generate them from scratch')
 def ask(question: str, dry_run: bool, fresh: bool):
     context = OrkgContext(fresh = fresh)
 
@@ -45,6 +46,7 @@ def ask(question: str, dry_run: bool, fresh: bool):
     Generate SPARQL query which allows to answer the question "{question}" using this graph
 
     {NEW_LINE.join(string_examples)}
+    Do only generate the query, nothing else.
     '''
 
     # print(content)
@@ -60,7 +62,8 @@ def ask(question: str, dry_run: bool, fresh: bool):
             ]
         )
 
-        print(completion.choices[0].message.content)
+        # print(completion)
+        return completion.choices[0].message.content
 
 
 @main.command()
@@ -87,6 +90,25 @@ def trace(top_n: int):
     # print(len(sciqa.train.utterances))
     # print(len(sciqa.test.utterances))
 
+@main.command()
+@argument('data', type = str) # train/test/valid
+def evaluate(data:str):
+    sciqa = SciQA()
+    if data=='train':
+        dataset = sciqa.train.entries
+    elif data=='test':
+        dataset = sciqa.test.entries
+    elif data=='valid':
+        dataset = sciqa.valid.entries
+    eval = ORKGWholeQueryEvaluationMetric()
+    for index, element in enumerate(dataset):
+        question = element.utterance
+        target = element.query 
+        res = ask(question=question, dry_run=False, fresh=True)
+        eval.run_f1_evaluator(target, res)
+        if (index+1)%10 == 0:
+            print(f'processed {index} queries')
+    return eval.target_something_generated_something
 
 if __name__ == '__main__':
     main()

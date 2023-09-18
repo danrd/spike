@@ -57,3 +57,7 @@ class SciQA:
     @property
     def valid(self):
         return Subset(path.join(DATA_PATH, 'valid', 'questions.json'))
+
+if __name__=="__main__":
+    test = SciQA()
+    print(test)
