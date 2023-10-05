@@ -36,28 +36,38 @@ class SPARQLQueryGenerationRunner:
                 "Instruction",
                 "Generate  SPARQL query for the given question. Pay attention to the syntax and namespaces in the example query "
                 "and use the structure of the provided knowledge graph while constructing the query. "
+                "If question is similar to the example question, then use corresponding SPARQL query as a template for SPARQL query generation. "
                 "Do only generate the query, nothing else."
             )
             question = (
                 "Question",
                 question_string := sample["question"]["string"]
             )
-            example = (
-                "SPARQL query example",
-                rank(
-                    question_string,
-                    self.sciqa.train.entries,
-                    top_n = 1,
-                    get_utterance = lambda entry: entry.utterance,
-                    threshold = 0
-                )[0].query
+
+            train_example = rank(
+                question_string,
+                self.sciqa.train.entries,
+                top_n = 1,
+                get_utterance = lambda entry: entry.utterance,
+                threshold = 0
+            )[0]
+
+            question_example = (
+                'Question example',
+                train_example.utterance
             )
+            example = (
+                "SPARQL query, which corresponds to the Question example",
+                train_example.query
+            )
+
             knowledge_graph = (
                 "Knowledge graph",
                 sample["subgraph"]
             )
             prompt = self.__compose_prompt(prompt_elements=[instruction,
                                            question,
+                                           question_example,
                                            example,
                                            knowledge_graph])
             result = self.__call_llm_runner(prompt)
