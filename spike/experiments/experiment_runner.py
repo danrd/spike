@@ -2,12 +2,15 @@ import json
 from typing import List, Tuple
 
 from spike.llm_runner.chat_gpt_runner import ChatGPTRunner
+from spike.SciQA import SciQA
+from spike.similarity import rank
 
 
 class SPARQLQueryGenerationRunner:
     def __init__(self, max_new_tokens):
         self.results = []
         self.llm_runner = ChatGPTRunner(max_new_tokens=max_new_tokens)
+        self.sciqa = SciQA()
 
     def __load_data(self, path: str) -> json:
         with open(path, 'r', encoding="utf8") as input_data:
@@ -37,11 +40,17 @@ class SPARQLQueryGenerationRunner:
             )
             question = (
                 "Question",
-                sample["question"]["string"]
+                question_string := sample["question"]["string"]
             )
             example = (
                 "SPARQL query example",
-                "TODO" # TODO @zeionara example_query selection
+                rank(
+                    question_string,
+                    self.sciqa.train.entries,
+                    top_n = 1,
+                    get_utterance = lambda entry: entry.utterance,
+                    threshold = 0
+                )[0].query
             )
             knowledge_graph = (
                 "Knowledge graph",

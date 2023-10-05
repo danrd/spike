@@ -2,7 +2,7 @@ import json
 from typing import List, Set, Union
 
 import sklearn
-from SPARQLWrapper import SPARQLWrapper, JSON
+# from SPARQLWrapper import SPARQLWrapper, JSON
 from sklearn.preprocessing import MultiLabelBinarizer
 from sklearn.metrics import f1_score
 
