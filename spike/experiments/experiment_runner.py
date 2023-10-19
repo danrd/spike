@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import List, Tuple
 
 from spike.llm_runner.chat_gpt_runner import ChatGPTRunner
@@ -30,8 +31,13 @@ class SPARQLQueryGenerationRunner:
         )
 
     def process_task(self, path_to_dataset_with_subgraph):
+        logger = logging.getLogger('sparqling_with_subgraph')
+        logger.setLevel(logging.INFO)
+        fh = logging.FileHandler('logs_test_set_results_experiment_with_example_and_subgraph_2_50_35.log')
+        logger.addHandler(fh)
         dataset = self.__load_data(path_to_dataset_with_subgraph)
-        for sample in dataset["questions"]:
+        for i, sample in enumerate(dataset[195:]):
+            print(i)
             instruction = (
                 "Instruction",
                 "Generate  SPARQL query for the given question. Pay attention to the syntax and namespaces in the example query "
@@ -41,7 +47,7 @@ class SPARQLQueryGenerationRunner:
             )
             question = (
                 "Question",
-                question_string := sample["question"]["string"]
+                question_string := sample["question"]
             )
 
             train_example = rank(
@@ -70,17 +76,33 @@ class SPARQLQueryGenerationRunner:
                                            question_example,
                                            example,
                                            knowledge_graph])
-            result = self.__call_llm_runner(prompt)
 
+            if self.llm_runner.is_prompt_too_long(prompt):
+                print("Subgraph length: ", len(sample["subgraph"]))
+                knowledge_graph = (
+                                      "Knowledge graph",
+                                      sample["subgraph"][0:5000]
+                                  )
+                prompt = self.__compose_prompt(prompt_elements=[instruction,
+                                                                question,
+                                                                question_example,
+                                                                example,
+                                                                knowledge_graph])
+
+            print(prompt, flush=True)
+            result = self.__call_llm_runner(prompt)
+            print(result, flush=True)
             #TODO postprocessing the query
             sample["llm_generated_query"] = result
+            logger.info(sample)
+            ...
         return dataset
 
 
 if __name__ == "__main__":
     qg = SPARQLQueryGenerationRunner(max_new_tokens=500)
-    generated_queries = qg.process_task(path_to_dataset_with_subgraph="assets/test_questions_with_subgraphs.json")
-    with open("assets/SciQA-dataset/test_set_results_experiment_with_example_and_subgraph.json", 'w+',
+    generated_queries = qg.process_task(path_to_dataset_with_subgraph="assets/final_questions_with_subgraphs2_50_35.json")
+    with open("assets/test_set_results_experiment_with_example_and_subgraph_2_50_35.json", 'w+',
               encoding="utf8") as output_file:
         json.dump(generated_queries, output_file, indent=2)
 

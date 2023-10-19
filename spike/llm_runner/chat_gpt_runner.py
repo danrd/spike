@@ -11,7 +11,7 @@ class ChatGPTRunner:
                  debug: bool = False
                  ):
         self.tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
-        self.max_new_tokens = max_new_tokens
+        self.max_new_tokens = 500
         self.__debug = debug
 
     def run(self, prompt: str) -> Optional[str]:
@@ -37,6 +37,7 @@ class ChatGPTRunner:
 
         print(len(tokens["input_ids"]) + self.max_new_tokens)
         if len(tokens["input_ids"]) + self.max_new_tokens > 4097:
+            self.prompt_length = len(tokens["input_ids"]) + self.max_new_tokens
             return True
         else:
             return False
